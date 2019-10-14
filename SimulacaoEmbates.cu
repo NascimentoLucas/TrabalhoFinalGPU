@@ -4,7 +4,12 @@
 
 #define MAX 100
 #define MIN 50
+
+#define MAXADJUST 15
+#define MINADJUST 0
+
 #define TIME 10
+#define TEST 10
 
 typedef struct { 
   int life, actualLife, 
@@ -13,8 +18,27 @@ typedef struct {
   cDamage;   
 } Fighter;
 
+void printFighter(Fighter data){
+  //printf("\n__%d__", i);
+  printf("\nlife %d/%d", data.actualLife, data.life);
+  //printf("\nstrength %d", data.strength);
+  //printf("\nspeed %d/%d", data.actualSpeed, data.speed);
+  //printf("\ncDamage %d", data.cDamage);
+}
+//todo garantir o random
 int get_random(){
   return (int)(((float)rand()/RAND_MAX) * (MAX - MIN) + MIN);
+}
+
+int get_random_neg(){
+
+  int multi = 1;
+
+  if(get_random() > (MAX - MIN) / 2 + MIN){
+    multi = -1;
+  }
+
+  return (int)((((float)rand()/RAND_MAX) * (MAXADJUST - MINADJUST) + MINADJUST) * multi);
 }
 
 void randomizeFighters(Fighter *data, int n) {
@@ -30,12 +54,13 @@ void randomizeFighters(Fighter *data, int n) {
 }
 
 void showFighters(Fighter *data, int n) {
+  printf("\nshowing fighters");
   for (int i = 0; i < n; i++) {
-    printf("\n__%d__\nlife: %d/%d\nstrength: %d\nspeed: %d/%d\ncDamage: %d", i, 
-    data[i].actualLife, data[i].life,
-    data[i].strength,
-    data[i].actualSpeed, data[i].speed, 
-    data[i].cDamage);
+    printf("\n__%d__", i);
+    printf("\nlife %d/%d", data[i].actualLife,data[i].life);
+    //printf("\nstrength %d", data[i].strength);
+    //printf("\nspeed %d/%d", data[i].actualSpeed,data[i].speed);
+    //printf("\ncDamage %d", data[i].cDamage);
   }
 }
 
@@ -83,9 +108,51 @@ void fight(Fighter *f, int n) {
   }
 }
 
+void selectFighters(Fighter *data, int n) {
+  //printf("\nselecting fighters");
+  int aux = 0;
+  for (int i = 0; i < n / 2; i+=2) {
+    if(data[i].actualLife > data[i + 1].actualLife){
+      data[aux] = data[i];
+    }
+    else if(data[i].actualLife < data[i + 1].actualLife){
+      data[aux] = data[i + 1];
+    }
+    else{
+      if(data[i].actualSpeed > data[i + 1].actualSpeed){
+        data[aux] = data[i];
+      }
+      else if(data[i].actualSpeed < data[i + 1].actualSpeed){
+        data[aux] = data[i + 1];
+      }
+      else{
+        data[aux] = data[i];
+      }
+    }
+    data[aux].actualLife =  data[aux].life;
+    data[aux].actualSpeed =  data[aux].speed;
+    aux++;
+  }
+}
+
+void multiplyFighters(Fighter *data, int n) {
+  //printf("\nmultipling fighters");
+  Fighter aux;
+  for (int i = n / 2; i < n; i+=2) {
+    aux = data[i - n / 2];
+    data[i].life = aux.life +  get_random_neg();
+    data[i].actualLife = data[i].life;
+    data[i].strength = aux.strength +  get_random_neg();
+
+    data[i].speed = aux.speed +  get_random_neg();
+    data[i].actualSpeed = data[i].speed;
+    data[i].cDamage = aux.cDamage +  get_random_neg();
+  }
+}
+
 int main(const int argc, const char** argv) {
 
-  int nBodies = 2;//2<<11;
+  int nBodies = 10;//2<<11;
   if (argc > 1) nBodies = 2<<atoi(argv[1]);
     
   int deviceId;
@@ -100,18 +167,35 @@ int main(const int argc, const char** argv) {
   cudaMallocManaged(&buf, bytes);
   //cudaMemPrefetchAsync(buf, bytes, deviceId);
 
-  randomizeFighters(buf,nBodies);
-        
-  fight<<<numberOfBlocks, threadsPerBlock>>>(buf, nBodies); 
+  randomizeFighters(buf, nBodies);
+  showFighters(buf, nBodies);
+  for (int t = 0; t < TEST; t++){
+    /*printf("\n");
+    printf("\n");*/
+    //printf("\nTTTTT%dTTTTT", t);
+    /*printf("\n");
+    printf("\n");*/
+            
+    fight<<<numberOfBlocks, threadsPerBlock>>>(buf, nBodies); 
 
-  cudaError_t err = cudaGetLastError();
-  if(err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
+    cudaError_t err = cudaGetLastError();
+    if(err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
 
-  cudaError_t asyncErr = cudaDeviceSynchronize();
-  if(asyncErr != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(asyncErr));  
+    cudaError_t asyncErr = cudaDeviceSynchronize();
+    if(asyncErr != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(asyncErr));  
 
+    //showFighters(buf, nBodies);
+    if ( t < TEST - 1 ){
+      selectFighters(buf, nBodies);
+      multiplyFighters(buf, nBodies);
+    }
+    else{
+      showFighters(buf, nBodies);
+    }
+  }
   //cudaMemPrefetchAsync(buf, bytes, cudaCpuDeviceId);
-  
-  //showFighters(buf, nBodies);
+
+
+
   cudaFree(buf);
 }
