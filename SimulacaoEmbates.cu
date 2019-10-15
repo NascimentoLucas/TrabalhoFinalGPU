@@ -77,7 +77,7 @@ int get_damage(Fighter *f, int atk, int target){
 
 __device__ 
 int get_corruption(Fighter *f, int atk, int target){
-  int cDam = f[atk].cDamage;
+  int cDam = f[atk].cDamage * 0.01;
   int atkLife = max(f[atk].actualLife, 1);
   int targetLife = max(f[target].actualLife, 1);
 
