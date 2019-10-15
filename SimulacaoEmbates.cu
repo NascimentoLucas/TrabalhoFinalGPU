@@ -4,12 +4,13 @@
 
 #define MAX 100
 #define MIN 50
+#define ADJUSTLIFE 100
 
 #define MAXADJUST 15
 #define MINADJUST 0
 
-#define TIME 10
-#define TEST 10
+#define TIME 100
+#define TEST 1
 
 typedef struct { 
   int life, actualLife, 
@@ -26,15 +27,15 @@ void printFighter(Fighter data){
   //printf("\ncDamage %d", data.cDamage);
 }
 //todo garantir o random
-int get_random(){
-  return (int)(((float)rand()/RAND_MAX) * (MAX - MIN) + MIN);
+int get_random(int min, int max){
+  return (int)(((float)rand()/RAND_MAX) * (max - min) + min);
 }
 
 int get_random_neg(){
 
   int multi = 1;
 
-  if(get_random() > (MAX - MIN) / 2 + MIN){
+  if(get_random(0, 10) > 5){
     multi = -1;
   }
 
@@ -43,13 +44,13 @@ int get_random_neg(){
 
 void randomizeFighters(Fighter *data, int n) {
   for (int i = 0; i < n; i++) {
-    data[i].life = get_random();
+    data[i].life = get_random(MIN + ADJUSTLIFE, MAX + ADJUSTLIFE);
     data[i].actualLife = data[i].life;
-    data[i].strength = get_random();
+    data[i].strength = get_random(MIN, MAX);
 
-    data[i].speed = get_random();
+    data[i].speed = get_random(MIN, MAX);
     data[i].actualSpeed = data[i].speed;
-    data[i].cDamage = get_random();
+    data[i].cDamage = get_random(MIN, MAX);
   }
 }
 
