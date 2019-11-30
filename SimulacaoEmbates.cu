@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DEBUG 1
+
 #define MAX 1000
 #define MIN 500
 #define ADJUSTLIFE 500
@@ -9,8 +11,8 @@
 #define MAXADJUST 10
 #define MINADJUST 0
 
-#define TIME 100
-#define TEST 100
+#define AMOUNTINTERACTION 100
+#define AMOUNTTESTS 100
 
 typedef struct { 
   int id, generation,
@@ -40,7 +42,7 @@ void printFighterExel(Fighter data){
   printf(";%d", data.speed);
   printf(";%d", data.cDamage);
 }
-//todo garantir o random
+
 int get_random(int min, int max){
   return (int)(((float)rand()/RAND_MAX) * (max - min) + min);
 }
@@ -107,7 +109,7 @@ void fight(Fighter *f, int n) {
   {     
     j = i + 1;
 
-    for(int k = 0; k < TIME; k += 1){
+    for(int k = 0; k < AMOUNTINTERACTION; k += 1){
 
       firstDamage = get_corruption(f, j, i);
       secondDamage = get_corruption(f, i, j);
@@ -136,14 +138,20 @@ int chooseWinner(Fighter *data, int index){
       return index + 1;
     }
     else{
-      return index;
+      int aux = 0;
+      if(get_random(0,2) > 0){
+        aux = 1;
+      }
+      return index + aux;
     }
   }
 }
 
 void selectFighters(Fighter *data, int n) {
   n /= 2;
-  //printf("\nSelecting#");
+  #if DEBUG > 1
+    printf("\nSelecting#");
+  #endif
   int aux = 0;
   int index;
   int start = 0;
@@ -157,19 +165,19 @@ void selectFighters(Fighter *data, int n) {
     data[aux].actualLife =  data[aux].life;
     data[aux].actualSpeed =  data[aux].speed;
     aux++;
-    //printf(" %d", n + 1);
   }
-  else{
-    
-    //printf(" %d", n);
-  }
-  //printf(" #fighters");)
+  
+  #if DEBUG > 1
+    printf(" #fighters");)
+  #endif
   for (int i = start; i < n; i++) {
     index = i * 2;
     data[aux] = data[chooseWinner(data, index)];
     data[aux].actualLife =  data[aux].life;
     data[aux].actualSpeed =  data[aux].speed;
-    //printFighter(data[aux]);
+    #if DEBUG > 1
+      printFighter(data[aux]);
+    #endif
     aux++;
   }
  
@@ -217,11 +225,10 @@ Fighter copyFighter(Fighter father){
   return son;
 }
 
-int main(const int argc, const char** argv) {
+int main() {
 
   int nMaxBodies = 2<<11;
   int nBodies = nMaxBodies;
-  if (argc > 1) nBodies = 2<<atoi(argv[1]);
     
   int deviceId;
   int numberOfSMs;
@@ -237,15 +244,17 @@ int main(const int argc, const char** argv) {
 
   randomizeFighters(buf, nBodies);
   Fighter champ;
-  for (int t = 0; t < TEST; t++){
-    /*printf("\n");
-    printf("\n");*/
-    //printf("\nTTTTT%dTTTTT", t);
-    /*printf("\n");
-    printf("\n");*/
-       
-    //printf("\n\nFirst fithters\n\n");
-    //showFighters(buf, nBodies);
+  for (int t = 0; t < AMOUNTTESTS; t++){
+    #if DEBUG > 2
+      printf("\n");
+      printf("\n");
+      printf("\nTTTTT%dTTTTT", t);
+      printf("\n");
+      printf("\n");
+        
+      printf("\n\nFirst fithters\n\n");
+      showFighters(buf, nBodies);
+    #endif
    
     while(nBodies > 2){
 
@@ -257,24 +266,17 @@ int main(const int argc, const char** argv) {
       cudaError_t asyncErr = cudaDeviceSynchronize();
       if(asyncErr != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(asyncErr));  
 
-      //showFighters(buf, nBodies);
       selectFighters(buf, nBodies);
       nBodies = (int)(nBodies / 2) ;
       nBodies += (nBodies % 2);
-      if ( t < TEST - 1 ){
-        //multiplyFighters(buf, nBodies);
-      }
-      else{
-        //showFighters(buf, nBodies);
-      }
     }
     
     champ = buf[chooseWinner(buf, 0)];
-    if(t == 0 || t == TEST - 1 || true){
-      //printf("\n***Champion round***");
-      //printFighter(champ);
+    if(t == 0 || t == AMOUNTTESTS - 1 || true){
+      printf("\n***Champion round***");
+      printFighter(champ);
       printFighterExel(champ);
-      //printf("\n*****");
+      printf("\n*****");
     }
 
     nBodies = nMaxBodies;
