@@ -12,7 +12,7 @@
 #define MINADJUST 0
 
 #define AMOUNTINTERACTION 100
-#define AMOUNTTESTS 100
+#define AMOUNTTESTS 1000
 
 typedef struct { 
   int id, generation,
@@ -58,7 +58,7 @@ int GetRandomNeg(){
   return (int)((((float)rand()/RAND_MAX) * (MAXADJUST - MINADJUST) + MINADJUST) * multi);
 }
 
-int maxMin(int value, int adjust){
+int MaxMin(int value, int adjust){
 
   if(MAX + adjust< value){
     return MAX + adjust;
@@ -69,6 +69,10 @@ int maxMin(int value, int adjust){
   return value;
 }
 
+int GetSpeed(int life){
+  return MaxMin(MAX - life, 0);
+}
+
 void CreateFighters(Fighter *data, int n) {
   for (int i = 0; i < n; i++) {
     data[i].id = i;
@@ -77,7 +81,11 @@ void CreateFighters(Fighter *data, int n) {
     data[i].actualLife = data[i].life;
     data[i].strength = GetRandom(MIN, 2);
 
-    data[i].speed = GetRandom(MIN, 2);
+    #if MODESPEED > 0
+      data[i].speed = GetSpeed(data[i].life);
+    #else
+      data[i].speed = GetRandom(MIN, 2);
+    #endif
     data[i].actualSpeed = data[i].speed;
     data[i].cDamage = GetRandom(MIN, 2);
   }
@@ -102,7 +110,7 @@ int get_damage(Fighter *f, int atk, int target){
 
 __device__ 
 int get_corruption(Fighter *f, int atk, int target){
-  int cDam = f[atk].cDamage * 0.01;
+  int cDam = f[atk].cDamage;
   int atkLife = max(f[atk].actualLife, 1);
   int targetLife = max(f[target].actualLife, 1);
 
@@ -199,13 +207,17 @@ void Reproduce(Fighter *data, Fighter father, int n) {
   for (int i = 0; i < n; i++) {
     data[i].id = i;
     data[i].generation = father.generation + 1;
-    data[i].life = maxMin(father.life +  GetRandomNeg(), 0);
+    data[i].life = MaxMin(father.life +  GetRandomNeg(), 0);
     data[i].actualLife = data[i].life;
-    data[i].strength = maxMin(father.strength +  GetRandomNeg(), 0);
+    data[i].strength = MaxMin(father.strength +  GetRandomNeg(), 0);
 
-    data[i].speed = maxMin(father.speed +  GetRandomNeg(), 0);
+    #if MODESPEED > 0
+      data[i].speed = GetSpeed(data[i].life);
+    #else
+      data[i].speed = MaxMin(father.speed +  GetRandomNeg(), 0);
+    #endif
     data[i].actualSpeed = data[i].speed;
-    data[i].cDamage = maxMin(father.cDamage +  GetRandomNeg(), 0);
+    data[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
     //printFighter(data[i]);
   }
 }
