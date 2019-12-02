@@ -8,12 +8,12 @@
             "name": "(Windows) Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/maintest.exe",
+            "program": "${workspaceFolder}/kernel.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": true
+            "externalConsole": false,
         }
     ]
 }

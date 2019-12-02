@@ -3,10 +3,10 @@
 #include <stdlib.h>
 
 #define DEBUG 1
+#define EXPORT true
 
 #define MAX 1000
-#define MIN 500
-#define ADJUSTLIFE 500
+#define MIN 1
 
 #define MAXADJUST 10
 #define MINADJUST 0
@@ -33,7 +33,7 @@ void printFighter(Fighter data){
   printf("\n_____");
 }
 
-void printFighterExel(Fighter data){
+void printFighterExport(Fighter data){
   //printf("\n__%d__", i);
   printf("\n%d", data.id);
   printf(";%d", data.generation);
@@ -43,32 +43,43 @@ void printFighterExel(Fighter data){
   printf(";%d", data.cDamage);
 }
 
-int get_random(int min, int max){
+int GetRandom(int min, int max){
   return (int)(((float)rand()/RAND_MAX) * (max - min) + min);
 }
 
-int get_random_neg(){
+int GetRandomNeg(){
 
   int multi = 1;
 
-  if(get_random(0, 10) > 5){
+  if(GetRandom(0, 10) > 5){
     multi = -1;
   }
 
   return (int)((((float)rand()/RAND_MAX) * (MAXADJUST - MINADJUST) + MINADJUST) * multi);
 }
 
-void randomizeFighters(Fighter *data, int n) {
+int maxMin(int value, int adjust){
+
+  if(MAX + adjust< value){
+    return MAX + adjust;
+  }
+  else if (MIN + adjust> value){
+    return MIN + adjust;
+  }
+  return value;
+}
+
+void CreateFighters(Fighter *data, int n) {
   for (int i = 0; i < n; i++) {
     data[i].id = i;
     data[i].generation = 0;
-    data[i].life = get_random(MIN + ADJUSTLIFE, MAX + ADJUSTLIFE);
+    data[i].life = GetRandom(MIN, 2);
     data[i].actualLife = data[i].life;
-    data[i].strength = get_random(MIN, MAX);
+    data[i].strength = GetRandom(MIN, 2);
 
-    data[i].speed = get_random(MIN, MAX);
+    data[i].speed = GetRandom(MIN, 2);
     data[i].actualSpeed = data[i].speed;
-    data[i].cDamage = get_random(MIN, MAX);
+    data[i].cDamage = GetRandom(MIN, 2);
   }
 }
 
@@ -139,7 +150,7 @@ int chooseWinner(Fighter *data, int index){
     }
     else{
       int aux = 0;
-      if(get_random(0,2) > 0){
+      if(GetRandom(0,2) > 0){
         aux = 1;
       }
       return index + aux;
@@ -183,29 +194,18 @@ void selectFighters(Fighter *data, int n) {
  
 }
 
-int maxMin(int value, int adjust){
-
-  if(MAX + adjust< value){
-    return MAX + adjust;
-  }
-  else if (MIN + adjust> value){
-    return MIN + adjust;
-  }
-  return value;
-}
-
-void multiplyFighters(Fighter *data, Fighter father, int n) {
+void Reproduce(Fighter *data, Fighter father, int n) {
   //printf("\nMultipling fighters %d", n);
   for (int i = 0; i < n; i++) {
     data[i].id = i;
     data[i].generation = father.generation + 1;
-    data[i].life = maxMin(father.life +  get_random_neg(), ADJUSTLIFE);
+    data[i].life = maxMin(father.life +  GetRandomNeg(), 0);
     data[i].actualLife = data[i].life;
-    data[i].strength = maxMin(father.strength +  get_random_neg(), 0);
+    data[i].strength = maxMin(father.strength +  GetRandomNeg(), 0);
 
-    data[i].speed = maxMin(father.speed +  get_random_neg(), 0);
+    data[i].speed = maxMin(father.speed +  GetRandomNeg(), 0);
     data[i].actualSpeed = data[i].speed;
-    data[i].cDamage = maxMin(father.cDamage +  get_random_neg(), 0);
+    data[i].cDamage = maxMin(father.cDamage +  GetRandomNeg(), 0);
     //printFighter(data[i]);
   }
 }
@@ -242,8 +242,11 @@ int main() {
   cudaMallocManaged(&buf, bytes);
   //cudaMemPrefetchAsync(buf, bytes, deviceId);
 
-  randomizeFighters(buf, nBodies);
+  CreateFighters(buf, nBodies);
   Fighter champ;
+  #if EXPORT
+    printf("id;generation;life;strength;speed;cDamage");
+  #endif
   for (int t = 0; t < AMOUNTTESTS; t++){
     #if DEBUG > 2
       printf("\n");
@@ -271,16 +274,17 @@ int main() {
       nBodies += (nBodies % 2);
     }
     
-    champ = buf[chooseWinner(buf, 0)];
-    if(t == 0 || t == AMOUNTTESTS - 1 || true){
-      printf("\n***Champion round***");
-      printFighter(champ);
-      printFighterExel(champ);
-      printf("\n*****");
-    }
+    champ = buf[chooseWinner(buf, 0)];   
+    
+    //printf("\n***Round Champion***");
+    //printFighter(champ);
+    #if EXPORT
+      printFighterExport(champ);
+    #endif
+    //printf("\n*****");
 
     nBodies = nMaxBodies;
-    multiplyFighters(buf, champ, nBodies);
+    Reproduce(buf, champ, nBodies);
   }
   //cudaMemPrefetchAsync(buf, bytes, cudaCpuDeviceId);
 
