@@ -4,24 +4,25 @@
 
 #define DEBUG 1
 #define EXPORT true
-#define MODE 0
+#define MODE 1
 
 #define MAX 1000
 #define MIN 1
 
-#define MAXADJUST 10
+#define MAXADJUST 2
 #define MINADJUST 0
 
-#define AMOUNTINTERACTION 100
+#define AMOUNTINTERACTION 10
 #define AMOUNTTESTS 1000
-
+#define SIZE 11
 
 typedef struct { 
   int id, generation,
   life, actualLife, 
   strength, 
   speed, actualSpeed, 
-  cDamage;   
+  cDamage, 
+  rate;   
 } Fighter;
 
 static Fighter mainFighter;
@@ -34,6 +35,7 @@ void printFighter(Fighter data){
   printf("\nstrength %d", data.strength);
   printf("\nspeed %d/%d", data.actualSpeed, data.speed);
   printf("\ncDamage %d", data.cDamage);
+  printf("\nrate %d", data.rate);
   printf("\n_____");
 }
 
@@ -45,6 +47,7 @@ void printFighterExport(Fighter data){
   printf(";%d", data.strength);
   printf(";%d", data.speed);
   printf(";%d", data.cDamage);
+  printf(";%d", data.rate);
 }
 
 int GetRandom(int min, int max){
@@ -81,13 +84,8 @@ void CreateMainFighter(){
   mainFighter.id = -1,
   mainFighter.generation = 0,
   mainFighter.life = GetRandom(MIN, MAX),
-  mainFighter.strength = GetRandom(MIN, MAX),
-
-  #if MODE > 0
-  mainFighter.speed = GetSpeed(data.life),
-  #else
+  mainFighter.strength = GetRandom(MIN, MAX),  
   mainFighter.speed = GetRandom(MIN, MAX),
-  #endif
   mainFighter.cDamage = GetRandom(MIN, MAX),
   
   mainFighter.actualLife = mainFighter.life;  
@@ -98,17 +96,32 @@ void CreateFighters(Fighter *data, int n) {
   for (int i = 0; i < n; i++) {
     data[i].id = i;
     data[i].generation = 0;
-    data[i].life = GetRandom(MIN, MAX);
-    data[i].actualLife = data[i].life;
-    data[i].strength = GetRandom(MIN, MAX);
 
-    #if MODE > 0
-      data[i].speed = GetSpeed(data[i].life);
+    #if MODE == 1
+      data[i].life = MaxMin(father.cDamage +  GetRandomNeg(), 0);
     #else
-      data[i].speed = GetRandom(MIN, MAX);
+      data[i].life = GetRandom(MIN, MAX);
     #endif
+    data[i].actualLife = data[i].life;
+
+    #if MODE == 2
+      data[i].strength = MaxMin(father.cDamage +  GetRandomNeg(), 0);
+    #else
+      data[i].strength =  GetRandom(MIN, MAX);
+    #endif
+
+    #if MODE == 3
+      data[i].speed = MaxMin(father.cDamage +  GetRandomNeg(), 0);
+    #else
+      data[i].speed =  GetRandom(MIN, MAX);
+    #endif  
     data[i].actualSpeed = data[i].speed;
-    data[i].cDamage = GetRandom(MIN, MAX);
+
+    #if MODE == 4
+      data[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
+    #else
+      data[i].cDamage =  GetRandom(MIN, MAX);
+    #endif 
   }
 }
 
@@ -120,71 +133,66 @@ void showFighters(Fighter *data, int n) {
 }
 
 __device__ 
-int get_damage(Fighter *f, int atk, int target){
-  int str = f[atk].strength;
-  int atkSpeed = max(f[atk].actualSpeed, 1);
-  int targetSpeed = max(f[target].actualSpeed, 1);
+int get_damage(Fighter atk, Fighter target){
+  int str = atk.strength;
+  int atkSpeed = max(atk.actualSpeed, 1);
+  int targetSpeed = max(target.actualSpeed, 1);
 
   int damage = __float2int_rd(str * ((float)atkSpeed / targetSpeed));
   return damage;
 }
 
 __device__ 
-int get_corruption(Fighter *f, int atk, int target){
-  int cDam = f[atk].cDamage * 0.01f;
-  int atkLife = max(f[atk].actualLife, 1);
-  int targetLife = max(f[target].actualLife, 1);
+int get_corruption(Fighter atk, Fighter target){
+  int cDam = atk.cDamage * 0.01f;
+  int atkLife = max(atk.actualLife, 1);
+  int targetLife = max(target.actualLife, 1);
 
   int damage = __float2int_rd(cDam * ((float)atkLife / targetLife));
   return damage;
 }
 __global__
-void fight(Fighter *f, int n) {
-  int index = 2 * threadIdx.x + blockIdx.x * blockDim.x;
-  int stride = 2 *  (blockDim.x * gridDim.x);
-  int j;
+void fight(Fighter *f, int n, Fighter mainFighter) {
+  int index = threadIdx.x + blockIdx.x * blockDim.x;
+  int stride = blockDim.x * gridDim.x;
   int firstDamage;
   int secondDamage;
+  int k = 0;
   for(int i = index; i < n; i += stride)
-  {     
-    j = i + 1;
+  {   
+    while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
+      k++;
+      firstDamage = get_corruption(mainFighter, f[i]);
+      secondDamage = get_corruption(f[i], mainFighter);
 
-    for(int k = 0; k < AMOUNTINTERACTION; k += 1){
-
-      firstDamage = get_corruption(f, j, i);
-      secondDamage = get_corruption(f, i, j);
-
-      f[i].actualLife -=  get_damage(f, j, i);
-      f[j].actualLife -= get_damage(f, i, j);
+      f[i].actualLife -=  get_damage(mainFighter, f[i]);
+      mainFighter.actualLife -= get_damage(f[i], mainFighter);
       
       f[i].actualSpeed -= firstDamage;
-      f[j].actualSpeed -= secondDamage;
+      mainFighter.actualSpeed -= secondDamage;
     }
+    k = 0;
+    f[i].rate = mainFighter.life - f[i].life;
   }
+
 }
 
 int chooseWinner(Fighter *data, int index){
-  if(data[index].actualLife > data[index + 1].actualLife){
+  int first = abs(data[index].rate);
+  int second = abs(data[index + 1].rate);
+  if(first < second){
     return index;
   }
-  else if(data[index].actualLife < data[index + 1].actualLife){
+  else if(first > second){
     return index + 1;
   }
   else{
-    if(data[index].actualSpeed > data[index + 1].actualSpeed){
-      return index;
-    }
-    else if(data[index].actualSpeed < data[index + 1].actualSpeed){
-      return index + 1;
-    }
-    else{
       int aux = 0;
       if(GetRandom(0,2) > 0){
         aux = 1;
       }
       return index + aux;
     }
-  }
 }
 
 void selectFighters(Fighter *data, int n) {
@@ -213,8 +221,6 @@ void selectFighters(Fighter *data, int n) {
   for (int i = start; i < n; i++) {
     index = i * 2;
     data[aux] = data[chooseWinner(data, index)];
-    data[aux].actualLife =  data[aux].life;
-    data[aux].actualSpeed =  data[aux].speed;
     #if DEBUG > 1
       printFighter(data[aux]);
     #endif
@@ -228,17 +234,32 @@ void Reproduce(Fighter *data, Fighter father, int n) {
   for (int i = 0; i < n; i++) {
     data[i].id = i;
     data[i].generation = father.generation + 1;
-    data[i].life = MaxMin(father.life +  GetRandomNeg(), 0);
-    data[i].actualLife = data[i].life;
-    data[i].strength = MaxMin(father.strength +  GetRandomNeg(), 0);
 
-    #if MODE > 0
-      data[i].speed = GetSpeed(data[i].life);
+    #if MODE == 1
+      data[i].life = father.life;
+    #else
+      data[i].life = MaxMin(father.life +  GetRandomNeg(), 0);
+    #endif
+    data[i].actualLife = data[i].life;
+
+    #if MODE == 2
+      data[i].strength = father.strength;
+    #else
+      data[i].strength = MaxMin(father.strength +  GetRandomNeg(), 0);
+    #endif
+
+    #if MODE == 3
+      data[i].speed = father.speed;
     #else
       data[i].speed = MaxMin(father.speed +  GetRandomNeg(), 0);
-    #endif
+    #endif  
     data[i].actualSpeed = data[i].speed;
-    data[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
+
+    #if MODE == 4
+      data[i].cDamage = father.cDamage;
+    #else
+      data[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
+    #endif 
     //printFighter(data[i]);
   }
 }
@@ -259,8 +280,7 @@ Fighter copyFighter(Fighter father){
 }
 
 int main() {
-
-  int nMaxBodies = 2<<11;
+  int nMaxBodies = 2<<SIZE;
   int nBodies = nMaxBodies;
     
   int deviceId;
@@ -282,10 +302,9 @@ int main() {
   printFighter(mainFighter);
 
   #if EXPORT
-    printf("\nid;generation;life;strength;speed;cDamage");
+    printf("\nid;generation;life;strength;speed;cDamage;rate");
   #endif
   for (int t = 0; t < AMOUNTTESTS; t++){
-    break;
     #if DEBUG > 2
       printf("\n");
       printf("\n");
@@ -299,7 +318,7 @@ int main() {
    
     while(nBodies > 2){
 
-      fight<<<numberOfBlocks, threadsPerBlock>>>(buf, nBodies); 
+      fight<<<numberOfBlocks, threadsPerBlock>>>(buf, nBodies, mainFighter); 
 
       cudaError_t err = cudaGetLastError();
       if(err != cudaSuccess) printf("Error: %s\n", cudaGetErrorString(err));
