@@ -4,6 +4,7 @@
 
 #define DEBUG 1
 #define EXPORT true
+#define MODE 0
 
 #define MAX 1000
 #define MIN 1
@@ -14,6 +15,7 @@
 #define AMOUNTINTERACTION 100
 #define AMOUNTTESTS 1000
 
+
 typedef struct { 
   int id, generation,
   life, actualLife, 
@@ -21,6 +23,8 @@ typedef struct {
   speed, actualSpeed, 
   cDamage;   
 } Fighter;
+
+static Fighter mainFighter;
 
 void printFighter(Fighter data){
   //printf("\n__%d__", i);
@@ -73,21 +77,38 @@ int GetSpeed(int life){
   return MaxMin(MAX - life, 0);
 }
 
+void CreateMainFighter(){  
+  mainFighter.id = -1,
+  mainFighter.generation = 0,
+  mainFighter.life = GetRandom(MIN, MAX),
+  mainFighter.strength = GetRandom(MIN, MAX),
+
+  #if MODE > 0
+  mainFighter.speed = GetSpeed(data.life),
+  #else
+  mainFighter.speed = GetRandom(MIN, MAX),
+  #endif
+  mainFighter.cDamage = GetRandom(MIN, MAX),
+  
+  mainFighter.actualLife = mainFighter.life;  
+  mainFighter.actualSpeed = mainFighter.speed;
+}
+
 void CreateFighters(Fighter *data, int n) {
   for (int i = 0; i < n; i++) {
     data[i].id = i;
     data[i].generation = 0;
-    data[i].life = GetRandom(MIN, 2);
+    data[i].life = GetRandom(MIN, MAX);
     data[i].actualLife = data[i].life;
-    data[i].strength = GetRandom(MIN, 2);
+    data[i].strength = GetRandom(MIN, MAX);
 
-    #if MODESPEED > 0
+    #if MODE > 0
       data[i].speed = GetSpeed(data[i].life);
     #else
-      data[i].speed = GetRandom(MIN, 2);
+      data[i].speed = GetRandom(MIN, MAX);
     #endif
     data[i].actualSpeed = data[i].speed;
-    data[i].cDamage = GetRandom(MIN, 2);
+    data[i].cDamage = GetRandom(MIN, MAX);
   }
 }
 
@@ -110,7 +131,7 @@ int get_damage(Fighter *f, int atk, int target){
 
 __device__ 
 int get_corruption(Fighter *f, int atk, int target){
-  int cDam = f[atk].cDamage;
+  int cDam = f[atk].cDamage * 0.01f;
   int atkLife = max(f[atk].actualLife, 1);
   int targetLife = max(f[target].actualLife, 1);
 
@@ -211,7 +232,7 @@ void Reproduce(Fighter *data, Fighter father, int n) {
     data[i].actualLife = data[i].life;
     data[i].strength = MaxMin(father.strength +  GetRandomNeg(), 0);
 
-    #if MODESPEED > 0
+    #if MODE > 0
       data[i].speed = GetSpeed(data[i].life);
     #else
       data[i].speed = MaxMin(father.speed +  GetRandomNeg(), 0);
@@ -256,10 +277,15 @@ int main() {
 
   CreateFighters(buf, nBodies);
   Fighter champ;
+
+  CreateMainFighter();
+  printFighter(mainFighter);
+
   #if EXPORT
-    printf("id;generation;life;strength;speed;cDamage");
+    printf("\nid;generation;life;strength;speed;cDamage");
   #endif
   for (int t = 0; t < AMOUNTTESTS; t++){
+    break;
     #if DEBUG > 2
       printf("\n");
       printf("\n");
