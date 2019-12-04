@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEBUG 1
-#define EXPORT false
+#define DEBUGTITLE false
+#define DEBUGVALUE false
+#define EXPORT true
 
 #define MAX 1000
 #define MIN 1
@@ -12,8 +13,9 @@
 #define MINADJUST 0
 
 #define AMOUNTINTERACTION 100
-#define AMOUNTTESTS 1000
-#define SIZE 10
+#define AMOUNTTESTS 2
+#define POW 6
+
 
 typedef struct { 
   int id, generation,
@@ -79,13 +81,13 @@ int GetSpeed(int life){
   return MaxMin(MAX - life, 0);
 }
 
-void CreateMainFighter(){  
+void SetupMainFighter(){  
   mainFighter.id = -1;
   mainFighter.generation = 0;
-  mainFighter.life = GetRandom(MAX / 2, MAX);
-  mainFighter.strength = GetRandom(MIN, MAX);  
-  mainFighter.speed = GetRandom(MIN, MAX);
-  mainFighter.cDamage = GetRandom(MIN, MAX);
+  mainFighter.life = MAX / 2;
+  mainFighter.strength = MAX / 2;  
+  mainFighter.speed = MAX / 2;
+  mainFighter.cDamage = MAX / 2;
   
   mainFighter.actualLife = mainFighter.life;  
   mainFighter.actualSpeed = mainFighter.speed;
@@ -158,22 +160,27 @@ void fight(Fighter *f, int n, Fighter mainFighter) {
       mainFighter.actualSpeed -= secondDamage;
     }
     k = 0;
-    f[i].rate = mainFighter.actualLife - f[i].actualLife;
+    f[i].rate = abs(mainFighter.actualLife - f[i].actualLife);    
   }
 
 }
 
 int chooseWinner(Fighter *data, int index){
-  float adjust = 0.5f;
-  float firstDif = MAX - abs(data[index].life - mainFighter.life) * adjust;
-  float secondDif = MAX - abs(data[index + 1].life - mainFighter.life) * adjust;
-  float first = abs(data[index].rate) ;
-  float second = abs(data[index + 1].rate) ;
-  
-  if(first < second){
+  int first = abs(data[index].rate) ;
+  int second = abs(data[index + 1].rate) ;
+  #if DEBUGVALUE
+    printf("\nfirst: %d <> second %d: ", first, second);
+  #endif
+  if(first < second){    
+    #if DEBUGVALUE
+      printf("\nchosen: %d id = %d", first, data[index].id);
+    #endif
     return index;
   }
   else if(first > second){
+    #if DEBUGVALUE
+      printf("\nchosen: %d id = %d", second, data[index + 1].id);
+    #endif
     return index + 1;
   }
   else{
@@ -187,14 +194,14 @@ int chooseWinner(Fighter *data, int index){
 
 void selectFighters(Fighter *data, int n) {
   n /= 2;
-  #if DEBUG > 1
-    printf("\nSelecting#");
+  #if DEBUGTITLE
+    printf("\nSelecting");
   #endif
   int aux = 0;
   int index;
   int start = 0;
   if(n % 2 == 1){
-    start = 1;    
+    start = 2;    
     data[aux] = data[0];
     data[aux].actualLife =  data[aux].life;
     data[aux].actualSpeed =  data[aux].speed;
@@ -205,37 +212,22 @@ void selectFighters(Fighter *data, int n) {
     aux++;
   }
   
-  #if DEBUG > 1
-    printf(" #fighters");)
-  #endif
+ 
   for (int i = start; i < n; i++) {
     index = i * 2;
     data[aux] = data[chooseWinner(data, index)];
-    #if DEBUG > 1
+    #if DEBUGVALUE
+      printf("\nindex = %d id = %d", aux, data[aux].id);
+    #endif
+    
+    data[aux].actualLife =  data[aux].life;
+    data[aux].actualSpeed =  data[aux].speed;
+    #if DEBUGVALUE > 1
       printFighter(data[aux]);
     #endif
     aux++;
   }
  
-}
-
-void Reproduce(Fighter *data, Fighter father, int n) {
-  //printf("\nMultipling fighters %d", n);
-  for (int i = 0; i < n; i++) {
-    data[i].id = i;
-    data[i].generation = father.generation + 1;
-
-    data[i].life = MaxMin(father.life +  GetRandomNeg(), 0);
-    data[i].actualLife = data[i].life;
-
-    data[i].strength = MaxMin(father.strength +  GetRandomNeg(), 0);
-
-    data[i].speed = MaxMin(father.speed +  GetRandomNeg(), 0);
-    data[i].actualSpeed = data[i].speed;
-
-    data[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
-    //printFighter(data[i]);
-  }
 }
 
 Fighter copyFighter(Fighter father){
@@ -253,8 +245,31 @@ Fighter copyFighter(Fighter father){
   return son;
 }
 
+void Reproduce(Fighter *data, Fighter father, int n) {
+  #if DEBUGTITLE
+    printf("\nMultipling father.rate: %d", father.rate);
+  #endif
+  data[0] = copyFighter(father);
+  for (int i = 1; i < n; i++) {
+    data[i].generation = father.generation + 1;
+
+    data[i].life = MaxMin(father.life +  GetRandomNeg(), 0);
+    data[i].actualLife = data[i].life;
+
+    data[i].strength = MaxMin(father.strength +  GetRandomNeg(), 0);
+
+    data[i].speed = MaxMin(father.speed +  GetRandomNeg(), 0);
+    data[i].actualSpeed = data[i].speed;
+
+    data[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
+    #if DEBUGVALUE
+      printFighter(data[i]);
+    #endif
+  }
+}
+
 int main() {
-  int nMaxBodies = 2<<SIZE;
+  int nMaxBodies = 2<<POW;
   int nBodies = nMaxBodies;
     
   int deviceId;
@@ -272,25 +287,20 @@ int main() {
   CreateFighters(buf, nBodies);
   Fighter champ;
 
-  CreateMainFighter();
+  SetupMainFighter();
 
   #if EXPORT
+    printf("\nMIN;MAX;MIN;MINADJUST;MAXADJUST;AMOUNTINTERACTION;AMOUNTTESTS;MaxBodies");
+    printf("\n%d;%d;%d;%d;%d;%d;%d;%d", 
+    MIN,MAX,MIN,MINADJUST,MAXADJUST,AMOUNTINTERACTION,AMOUNTTESTS,nMaxBodies);
     printf("\nid;generation;life;strength;speed;cDamage;rate");
   #endif
   for (int t = 0; t < AMOUNTTESTS; t++){
-    #if DEBUG > 2
-      printf("\n");
-      printf("\n");
-      printf("\nTTTTT%dTTTTT", t);
-      printf("\n");
-      printf("\n");
-        
-      printf("\n\nFirst fithters\n\n");
-      showFighters(buf, nBodies);
-    #endif
    
     while(nBodies > 2){
-
+      #if DEBUGTITLE
+        printf("\n###nBodies: %d###", nBodies);
+      #endif
       fight<<<numberOfBlocks, threadsPerBlock>>>(buf, nBodies, mainFighter); 
 
       cudaError_t err = cudaGetLastError();
@@ -302,17 +312,22 @@ int main() {
       selectFighters(buf, nBodies);
       nBodies = (int)(nBodies / 2) ;
       nBodies += (nBodies % 2);
+      #if DEBUGTITLE
+        printf("\n#####");
+      #endif
     }
     
     champ = buf[chooseWinner(buf, 0)];   
     
-    //printf("\n***Round Champion***");
-    //printFighter(champ);
+
     #if EXPORT
       printFighterExport(champ);
       //printFighter(champ);
     #endif
-    //printf("\n*****");
+
+    if(champ.rate == 0){
+      break;
+    }
 
     nBodies = nMaxBodies;
     Reproduce(buf, champ, nBodies);
@@ -324,10 +339,13 @@ int main() {
 
   printFighter(champ);
   printFighter(mainFighter);
-  #if !EXPORT
+
+
+  #if DEBUGVALUE || true
     int firstDamage;
     int secondDamage;
     int k = 0;
+    
     while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
       k++;
       firstDamage = get_corruption(mainFighter, champ);
@@ -341,5 +359,6 @@ int main() {
       printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
     }
   #endif
+
   cudaFree(buf);
 }
