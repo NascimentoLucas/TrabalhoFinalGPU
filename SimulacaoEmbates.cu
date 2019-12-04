@@ -3,18 +3,17 @@
 #include <stdlib.h>
 
 #define DEBUG 1
-#define EXPORT true
-#define MODE 1
+#define EXPORT false
 
 #define MAX 1000
 #define MIN 1
 
-#define MAXADJUST 2
+#define MAXADJUST 12
 #define MINADJUST 0
 
-#define AMOUNTINTERACTION 10
+#define AMOUNTINTERACTION 100
 #define AMOUNTTESTS 1000
-#define SIZE 11
+#define SIZE 10
 
 typedef struct { 
   int id, generation,
@@ -62,7 +61,7 @@ int GetRandomNeg(){
     multi = -1;
   }
 
-  return (int)((((float)rand()/RAND_MAX) * (MAXADJUST - MINADJUST) + MINADJUST) * multi);
+  return GetRandom(MINADJUST, MAXADJUST) * multi;
 }
 
 int MaxMin(int value, int adjust){
@@ -81,12 +80,12 @@ int GetSpeed(int life){
 }
 
 void CreateMainFighter(){  
-  mainFighter.id = -1,
-  mainFighter.generation = 0,
-  mainFighter.life = GetRandom(MIN, MAX),
-  mainFighter.strength = GetRandom(MIN, MAX),  
-  mainFighter.speed = GetRandom(MIN, MAX),
-  mainFighter.cDamage = GetRandom(MIN, MAX),
+  mainFighter.id = -1;
+  mainFighter.generation = 0;
+  mainFighter.life = GetRandom(MAX / 2, MAX);
+  mainFighter.strength = GetRandom(MIN, MAX);  
+  mainFighter.speed = GetRandom(MIN, MAX);
+  mainFighter.cDamage = GetRandom(MIN, MAX);
   
   mainFighter.actualLife = mainFighter.life;  
   mainFighter.actualSpeed = mainFighter.speed;
@@ -97,31 +96,15 @@ void CreateFighters(Fighter *data, int n) {
     data[i].id = i;
     data[i].generation = 0;
 
-    #if MODE == 1
-      data[i].life = MaxMin(father.cDamage +  GetRandomNeg(), 0);
-    #else
-      data[i].life = GetRandom(MIN, MAX);
-    #endif
+    data[i].life = GetRandom(MIN, MAX);
     data[i].actualLife = data[i].life;
 
-    #if MODE == 2
-      data[i].strength = MaxMin(father.cDamage +  GetRandomNeg(), 0);
-    #else
-      data[i].strength =  GetRandom(MIN, MAX);
-    #endif
+    data[i].strength =  GetRandom(MIN, MAX);
 
-    #if MODE == 3
-      data[i].speed = MaxMin(father.cDamage +  GetRandomNeg(), 0);
-    #else
-      data[i].speed =  GetRandom(MIN, MAX);
-    #endif  
+    data[i].speed =  GetRandom(MIN, MAX);
     data[i].actualSpeed = data[i].speed;
 
-    #if MODE == 4
-      data[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
-    #else
-      data[i].cDamage =  GetRandom(MIN, MAX);
-    #endif 
+    data[i].cDamage =  GetRandom(MIN, MAX);
   }
 }
 
@@ -133,24 +116,27 @@ void showFighters(Fighter *data, int n) {
 }
 
 __device__ 
+__host__
 int get_damage(Fighter atk, Fighter target){
   int str = atk.strength;
   int atkSpeed = max(atk.actualSpeed, 1);
   int targetSpeed = max(target.actualSpeed, 1);
 
-  int damage = __float2int_rd(str * ((float)atkSpeed / targetSpeed));
+  int damage = (int)(str * ((float)atkSpeed / targetSpeed));
   return damage;
 }
 
 __device__ 
+__host__
 int get_corruption(Fighter atk, Fighter target){
   int cDam = atk.cDamage * 0.01f;
   int atkLife = max(atk.actualLife, 1);
   int targetLife = max(target.actualLife, 1);
 
-  int damage = __float2int_rd(cDam * ((float)atkLife / targetLife));
+  int damage = (int)(cDam * ((float)atkLife / targetLife));
   return damage;
 }
+
 __global__
 void fight(Fighter *f, int n, Fighter mainFighter) {
   int index = threadIdx.x + blockIdx.x * blockDim.x;
@@ -172,14 +158,18 @@ void fight(Fighter *f, int n, Fighter mainFighter) {
       mainFighter.actualSpeed -= secondDamage;
     }
     k = 0;
-    f[i].rate = mainFighter.life - f[i].life;
+    f[i].rate = mainFighter.actualLife - f[i].actualLife;
   }
 
 }
 
 int chooseWinner(Fighter *data, int index){
-  int first = abs(data[index].rate);
-  int second = abs(data[index + 1].rate);
+  float adjust = 0.5f;
+  float firstDif = MAX - abs(data[index].life - mainFighter.life) * adjust;
+  float secondDif = MAX - abs(data[index + 1].life - mainFighter.life) * adjust;
+  float first = abs(data[index].rate) ;
+  float second = abs(data[index + 1].rate) ;
+  
   if(first < second){
     return index;
   }
@@ -235,31 +225,15 @@ void Reproduce(Fighter *data, Fighter father, int n) {
     data[i].id = i;
     data[i].generation = father.generation + 1;
 
-    #if MODE == 1
-      data[i].life = father.life;
-    #else
-      data[i].life = MaxMin(father.life +  GetRandomNeg(), 0);
-    #endif
+    data[i].life = MaxMin(father.life +  GetRandomNeg(), 0);
     data[i].actualLife = data[i].life;
 
-    #if MODE == 2
-      data[i].strength = father.strength;
-    #else
-      data[i].strength = MaxMin(father.strength +  GetRandomNeg(), 0);
-    #endif
+    data[i].strength = MaxMin(father.strength +  GetRandomNeg(), 0);
 
-    #if MODE == 3
-      data[i].speed = father.speed;
-    #else
-      data[i].speed = MaxMin(father.speed +  GetRandomNeg(), 0);
-    #endif  
+    data[i].speed = MaxMin(father.speed +  GetRandomNeg(), 0);
     data[i].actualSpeed = data[i].speed;
 
-    #if MODE == 4
-      data[i].cDamage = father.cDamage;
-    #else
-      data[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
-    #endif 
+    data[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
     //printFighter(data[i]);
   }
 }
@@ -299,7 +273,6 @@ int main() {
   Fighter champ;
 
   CreateMainFighter();
-  printFighter(mainFighter);
 
   #if EXPORT
     printf("\nid;generation;life;strength;speed;cDamage;rate");
@@ -337,13 +310,36 @@ int main() {
     //printFighter(champ);
     #if EXPORT
       printFighterExport(champ);
+      //printFighter(champ);
     #endif
     //printf("\n*****");
 
     nBodies = nMaxBodies;
     Reproduce(buf, champ, nBodies);
   }
-  //cudaMemPrefetchAsync(buf, bytes, cudaCpuDeviceId);
+  cudaMemPrefetchAsync(buf, bytes, cudaCpuDeviceId);
 
+  champ.actualLife = champ.life;
+  champ.actualSpeed = champ.speed;
+
+  printFighter(champ);
+  printFighter(mainFighter);
+  #if !EXPORT
+    int firstDamage;
+    int secondDamage;
+    int k = 0;
+    while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
+      k++;
+      firstDamage = get_corruption(mainFighter, champ);
+      secondDamage = get_corruption(champ, mainFighter);
+
+      champ.actualLife -=  get_damage(mainFighter, champ);
+      mainFighter.actualLife -= get_damage(champ, mainFighter);
+      
+      champ.actualSpeed -= firstDamage;
+      mainFighter.actualSpeed -= secondDamage;
+      printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
+    }
+  #endif
   cudaFree(buf);
 }
