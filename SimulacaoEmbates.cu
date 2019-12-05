@@ -11,6 +11,7 @@
 
 #define MAXADJUST 12
 #define MINADJUST 0
+#define LIFEADJUST MAX
 
 #define AMOUNTINTERACTION 100
 #define AMOUNTTESTS 100
@@ -84,7 +85,7 @@ int GetSpeed(int life){
 void SetupMainFighter(){  
   mainFighter.id = -1;
   mainFighter.generation = 0;
-  mainFighter.life = GetRandom(MIN, MAX);
+  mainFighter.life = GetRandom(MIN, MAX) + LIFEADJUST;
   mainFighter.strength = GetRandom(MIN, MAX); 
   mainFighter.speed = GetRandom(MIN, MAX);
   mainFighter.cDamage = GetRandom(MIN, MAX);
@@ -98,7 +99,7 @@ void CreateFighters(Fighter *data, int n) {
     data[i].id = i;
     data[i].generation = 0;
 
-    data[i].life = GetRandom(MIN, MAX);
+    data[i].life = GetRandom(MIN, MAX) + LIFEADJUST;
     data[i].actualLife = data[i].life;
 
     data[i].strength =  GetRandom(MIN, MAX);

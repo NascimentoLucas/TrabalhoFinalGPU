@@ -11,6 +11,7 @@
 
 #define MAXADJUST 12
 #define MINADJUST 0
+#define LIFEADJUST MAX
 
 #define AMOUNTINTERACTION 100
 #define AMOUNTTESTS 100
@@ -84,7 +85,7 @@ void CreateFighters(int n) {
     fighters[i].id = i;
     fighters[i].generation = 0;
 
-    fighters[i].life = GetRandom(MIN, MAX);
+    fighters[i].life = GetRandom(MIN, MAX) + LIFEADJUST;
     fighters[i].actualLife = fighters[i].life;
 
     fighters[i].strength =  GetRandom(MIN, MAX);
@@ -99,7 +100,7 @@ void CreateFighters(int n) {
 void SetupMainFighter(){  
   mainFighter.id = -1;
   mainFighter.generation = 0;
-  mainFighter.life = GetRandom(MIN, MAX);
+  mainFighter.life = GetRandom(MIN, MAX) + LIFEADJUST;
   mainFighter.strength = GetRandom(MIN, MAX); 
   mainFighter.speed = GetRandom(MIN, MAX);
   mainFighter.cDamage = GetRandom(MIN, MAX);
@@ -269,16 +270,15 @@ int main() {
   printf("\nid;generation;life;strength;speed;cDamage;rate");
   double cpu_time_used;
   clock_t start, end;
+  
+  start = clock();
   for (int t = 0; t < AMOUNTTESTS; t++){
    
     while(nBodies > 2){
       #if DEBUGTITLE
         printf("\n###nBodies: %d###", nBodies);
       #endif
-      start = clock();
       Simulation(nBodies); 
-      end = clock();
-      cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
       selectFighters(nBodies);
       nBodies = (int)(nBodies / 2) ;
@@ -290,6 +290,8 @@ int main() {
     
     champ = fighters[chooseWinner(fighters, 0)];   
     
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     
     printFighterExport(champ);
