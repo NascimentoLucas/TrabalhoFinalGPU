@@ -148,7 +148,7 @@ void fight(Fighter *f, int n, Fighter mainFighter) {
   int k = 0;
   for(int i = index; i < n; i += stride)
   {   
-    while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
+    while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0  & f[i].actualLife > 0){
       k++;
       firstDamage = get_corruption(mainFighter, f[i]);
       secondDamage = get_corruption(f[i], mainFighter);
@@ -346,7 +346,8 @@ int main() {
     int secondDamage;
     int k = 0;
     
-    while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
+    printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
+    while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0 & champ.actualLife > 0){
       k++;
       firstDamage = get_corruption(mainFighter, champ);
       secondDamage = get_corruption(champ, mainFighter);
