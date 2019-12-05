@@ -12,8 +12,8 @@
 #define MINADJUST 0
 
 #define AMOUNTINTERACTION 100
-#define AMOUNTTESTS 50
-#define POW 2
+#define AMOUNTTESTS 100
+#define POW 11
 
 #define MAXBODIES 2<<POW
 
@@ -125,7 +125,18 @@ int get_corruption(Fighter atk, Fighter target){
   return damage;
 }
 
-void fight(int n) {
+void Fight(int index){
+  int firstDamage = get_corruption(mainFighter, fighters[index]);
+  int secondDamage = get_corruption(fighters[index], mainFighter);
+
+  fighters[index].actualLife -=  get_damage(mainFighter, fighters[index]);
+  mainFighter.actualLife -= get_damage(fighters[index], mainFighter);
+
+  fighters[index].actualSpeed -= firstDamage;
+  mainFighter.actualSpeed -= secondDamage;
+}
+
+void Simulation(int n) {
     
     int firstDamage;
     int secondDamage;
@@ -135,15 +146,8 @@ void fight(int n) {
     for(int i = 0; i < n; i ++)
     {   
         while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
-            k++;
-            firstDamage = get_corruption(mainFighter, fighters[i]);
-            secondDamage = get_corruption(fighters[i], mainFighter);
-
-            fighters[i].actualLife -=  get_damage(mainFighter, fighters[i]);
-            mainFighter.actualLife -= get_damage(fighters[i], mainFighter);
-
-            fighters[i].actualSpeed -= firstDamage;
-            mainFighter.actualSpeed -= secondDamage;
+          k++;
+          Fight(i);
         }
         k = 0;
         fighters[i].rate = abs(mainFighter.actualLife - fighters[i].actualLife); 
@@ -178,7 +182,6 @@ int chooseWinner(Fighter *f, int index){
       return index + aux;
     }
 }
-
 
 void selectFighters(int n) {
   n /= 2;
@@ -234,9 +237,6 @@ Fighter copyFighter(Fighter father){
 }
 
 void Reproduce(Fighter father, int n) {
-  #if DEBUGTITLE
-    printf("\nMultipling father.rate: %d", father.rate);
-  #endif
   fighters[0] = copyFighter(father);
   for (int i = 1; i < n; i++) {
     fighters[i].generation = father.generation + 1;
@@ -250,9 +250,6 @@ void Reproduce(Fighter father, int n) {
     fighters[i].actualSpeed = fighters[i].speed;
 
     fighters[i].cDamage = MaxMin(father.cDamage +  GetRandomNeg(), 0);
-    #if DEBUGVALUE
-      printFighter(fighters[i]);
-    #endif
   }
 }
 
@@ -276,7 +273,7 @@ int main() {
       #if DEBUGTITLE
         printf("\n###nBodies: %d###", nBodies);
       #endif
-      fight(nBodies); 
+      Simulation(nBodies); 
 
       selectFighters(nBodies);
       nBodies = (int)(nBodies / 2) ;
@@ -303,37 +300,7 @@ int main() {
     Reproduce(champ, nBodies);
   }
 
-  champ.actualLife = champ.life;
-  champ.actualSpeed = champ.speed;
-
-  
-  mainFighter.actualLife = mainFighter.life;
-  mainFighter.actualSpeed = mainFighter.speed;
-
   printFighter(champ);
   printFighter(mainFighter);
-
-
   
-  int firstDamage;
-  int secondDamage;
-  int k = 0;
-  
-  
-  printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
-  while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
-    k++;
-    firstDamage = get_corruption(mainFighter, champ);
-    secondDamage = get_corruption(champ, mainFighter);
-
-    champ.actualLife -=  get_damage(mainFighter, champ);
-    mainFighter.actualLife -= get_damage(champ, mainFighter);
-    
-    champ.actualSpeed -= firstDamage;
-    mainFighter.actualSpeed -= secondDamage;
-    printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
-  }
-  
-
-    //todo desalocar
 }
