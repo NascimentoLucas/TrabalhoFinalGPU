@@ -312,26 +312,26 @@ int main() {
   printFighter(mainFighter);
 
 
-  #if DEBUGVALUE
-    int firstDamage;
-    int secondDamage;
-    int k = 0;
-    
-    
-    printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
-    while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
-      k++;
-      firstDamage = get_corruption(mainFighter, champ);
-      secondDamage = get_corruption(champ, mainFighter);
+  
+  int firstDamage;
+  int secondDamage;
+  int k = 0;
+  
+  
+  printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
+  while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
+    k++;
+    firstDamage = get_corruption(mainFighter, champ);
+    secondDamage = get_corruption(champ, mainFighter);
 
-      champ.actualLife -=  get_damage(mainFighter, champ);
-      mainFighter.actualLife -= get_damage(champ, mainFighter);
-      
-      champ.actualSpeed -= firstDamage;
-      mainFighter.actualSpeed -= secondDamage;
-      printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
-    }
-  #endif
+    champ.actualLife -=  get_damage(mainFighter, champ);
+    mainFighter.actualLife -= get_damage(champ, mainFighter);
+    
+    champ.actualSpeed -= firstDamage;
+    mainFighter.actualSpeed -= secondDamage;
+    printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
+  }
+  
 
     //todo desalocar
 }
