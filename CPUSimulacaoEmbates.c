@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define DEBUGTITLE false
 #define DEBUGVALUE false
@@ -266,14 +267,18 @@ int main() {
   printf("\n%d;%d;%d;%d;%d;%d;%d;%d", 
   MIN,MAX,MIN,MINADJUST,MAXADJUST,AMOUNTINTERACTION,AMOUNTTESTS,MAXBODIES);
   printf("\nid;generation;life;strength;speed;cDamage;rate");
-  
+  double cpu_time_used;
+  clock_t start, end;
   for (int t = 0; t < AMOUNTTESTS; t++){
    
     while(nBodies > 2){
       #if DEBUGTITLE
         printf("\n###nBodies: %d###", nBodies);
       #endif
+      start = clock();
       Simulation(nBodies); 
+      end = clock();
+      cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
       selectFighters(nBodies);
       nBodies = (int)(nBodies / 2) ;
@@ -317,4 +322,7 @@ int main() {
     mainFighter.actualSpeed -= secondDamage;
     printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
   }
+
+  printf("\ntime");
+  printf("\n%f", cpu_time_used);
 }
