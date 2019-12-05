@@ -15,7 +15,7 @@
 
 #define AMOUNTINTERACTION 100
 #define AMOUNTTESTS 100
-#define POW 10
+#define POW 20
 
 
 typedef struct { 
@@ -290,10 +290,10 @@ int main() {
 
   SetupMainFighter();
 
+  printf("\nMIN;MAX;MIN;MINADJUST;MAXADJUST;AMOUNTINTERACTION;AMOUNTTESTS;MaxBodies");
+  printf("\n%d;%d;%d;%d;%d;%d;%d;%d", 
+  MIN,MAX,MIN,MINADJUST,MAXADJUST,AMOUNTINTERACTION,AMOUNTTESTS,nMaxBodies);
   #if EXPORT
-    printf("\nMIN;MAX;MIN;MINADJUST;MAXADJUST;AMOUNTINTERACTION;AMOUNTTESTS;MaxBodies");
-    printf("\n%d;%d;%d;%d;%d;%d;%d;%d", 
-    MIN,MAX,MIN,MINADJUST,MAXADJUST,AMOUNTINTERACTION,AMOUNTTESTS,nMaxBodies);
     printf("\nid;generation;life;strength;speed;cDamage;rate");
   #endif
   for (int t = 0; t < AMOUNTTESTS; t++){

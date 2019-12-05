@@ -5,6 +5,7 @@
 
 #define DEBUGTITLE false
 #define DEBUGVALUE false
+#define AVERAGETIME 10
 
 #define MAX 1000
 #define MIN 1
@@ -15,7 +16,7 @@
 
 #define AMOUNTINTERACTION 100
 #define AMOUNTTESTS 100
-#define POW 12
+#define POW 20
 
 #define MAXBODIES 2<<POW
 
@@ -272,7 +273,7 @@ int main() {
   clock_t start, end;
   
   start = clock();
-  for (int a = 0; a < 50; a++){
+  for (int a = 0; a < AVERAGETIME; a++){
     for (int t = 0; t < AMOUNTTESTS; t++){
     
       while(nBodies > 2){
@@ -311,7 +312,7 @@ int main() {
   
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-    cpu_time_used /= 50;
+    cpu_time_used /= AVERAGETIME;
 
   //printFighter(champ);
   //printFighter(mainFighter);
