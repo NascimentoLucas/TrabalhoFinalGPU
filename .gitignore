@@ -1,3 +1,6 @@
 kernel.exe
 kernel.lib
 kernel.exp
+CPUSimulacaoEmbates.pdb
+CPUSimulacaoEmbates.exe
+CPUSimulacaoEmbates.dwf
