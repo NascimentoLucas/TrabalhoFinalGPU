@@ -4,14 +4,14 @@
 
 #define DEBUGTITLE false
 #define DEBUGVALUE false
-#define EXPORT true
+#define EXPORT false
 
 #define MAX 1000
 #define MIN 1
 
 #define MAXADJUST 12
 #define MINADJUST 0
-#define LIFEADJUST MAX
+#define LIFEADJUST 1000
 
 #define AMOUNTINTERACTION 100
 #define AMOUNTTESTS 100

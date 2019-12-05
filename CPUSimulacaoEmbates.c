@@ -15,7 +15,7 @@
 
 #define AMOUNTINTERACTION 100
 #define AMOUNTTESTS 100
-#define POW 10
+#define POW 12
 
 #define MAXBODIES 2<<POW
 
@@ -272,46 +272,52 @@ int main() {
   clock_t start, end;
   
   start = clock();
-  for (int t = 0; t < AMOUNTTESTS; t++){
-   
-    while(nBodies > 2){
-      #if DEBUGTITLE
-        printf("\n###nBodies: %d###", nBodies);
-      #endif
-      Simulation(nBodies); 
+  for (int a = 0; a < 50; a++){
+    for (int t = 0; t < AMOUNTTESTS; t++){
+    
+      while(nBodies > 2){
+        #if DEBUGTITLE
+          printf("\n###nBodies: %d###", nBodies);
+        #endif
+        Simulation(nBodies); 
 
-      selectFighters(nBodies);
-      nBodies = (int)(nBodies / 2) ;
-      nBodies += (nBodies % 2);
-      #if DEBUGTITLE
-        printf("\n#####");
-      #endif
+        selectFighters(nBodies);
+        nBodies = (int)(nBodies / 2) ;
+        nBodies += (nBodies % 2);
+        #if DEBUGTITLE
+          printf("\n#####");
+        #endif
+      }
+      
+      champ = fighters[chooseWinner(fighters, 0)];   
+      
+
+      
+      //printFighterExport(champ);
+      //printFighter(champ);
+      
+
+      if(champ.rate == 0){
+        //printf("\nEarly quit at %d/%d", t, AMOUNTTESTS);
+        break;
+      }
+
+      nBodies = MAXBODIES;
+      Reproduce(champ, nBodies);
     }
-    
-    champ = fighters[chooseWinner(fighters, 0)];   
-    
+    nBodies = MAXBODIES;
+    SetupMainFighter();
+  }
+  
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-
-    
-    printFighterExport(champ);
-    //printFighter(champ);
-    
-
-    if(champ.rate == 0){
-      printf("\nEarly quit at %d/%d", t, AMOUNTTESTS);
-      break;
-    }
-
-    nBodies = MAXBODIES;
-    Reproduce(champ, nBodies);
-  }
+    cpu_time_used /= 50;
 
   //printFighter(champ);
   //printFighter(mainFighter);
   
   int k = 0;
-  printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
+  //printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
   while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0  & champ.actualLife > 0){
     k++;
     int firstDamage = get_corruption(mainFighter,  champ);
@@ -322,7 +328,7 @@ int main() {
 
     champ.actualSpeed -= firstDamage;
     mainFighter.actualSpeed -= secondDamage;
-    printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
+    //printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
   }
 
   printf("\ntime");
