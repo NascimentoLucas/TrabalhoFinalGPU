@@ -13,7 +13,7 @@
 
 #define AMOUNTINTERACTION 100
 #define AMOUNTTESTS 100
-#define POW 11
+#define POW 10
 
 #define MAXBODIES 2<<POW
 
@@ -145,7 +145,7 @@ void Simulation(int n) {
     for(int i = 0; i < n; i ++)
     {   
       int k = 0;
-      while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
+     while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0  & fighters[i].actualLife > 0){
         k++;
         Fight(i);
       }
@@ -303,4 +303,18 @@ int main() {
   printFighter(champ);
   printFighter(mainFighter);
   
+  int k = 0;
+  printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
+  while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0  & champ.actualLife > 0){
+    k++;
+    int firstDamage = get_corruption(mainFighter,  champ);
+    int secondDamage = get_corruption( champ, mainFighter);
+
+    champ.actualLife -=  get_damage(mainFighter,  champ);
+    mainFighter.actualLife -= get_damage( champ, mainFighter);
+
+    champ.actualSpeed -= firstDamage;
+    mainFighter.actualSpeed -= secondDamage;
+    printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);
+  }
 }

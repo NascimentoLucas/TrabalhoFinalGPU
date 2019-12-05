@@ -13,8 +13,8 @@
 #define MINADJUST 0
 
 #define AMOUNTINTERACTION 100
-#define AMOUNTTESTS 50
-#define POW 8
+#define AMOUNTTESTS 100
+#define POW 10
 
 
 typedef struct { 
