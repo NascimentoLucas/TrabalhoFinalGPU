@@ -147,6 +147,7 @@ void fight(int n) {
         k = 0;
         fighters[i].rate = abs(mainFighter.actualLife - fighters[i].actualLife); 
         mainFighter.actualLife = mainFighter.life;   
+        mainFighter.actualSpeed = mainFighter.speed;   
     }
 }
 
