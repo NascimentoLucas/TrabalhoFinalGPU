@@ -140,19 +140,19 @@ void Simulation(int n) {
     
     int firstDamage;
     int secondDamage;
-    int k = 0;
 
     #pragma acc kernels
     for(int i = 0; i < n; i ++)
     {   
-        while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
-          k++;
-          Fight(i);
-        }
-        k = 0;
-        fighters[i].rate = abs(mainFighter.actualLife - fighters[i].actualLife); 
-        mainFighter.actualLife = mainFighter.life;   
-        mainFighter.actualSpeed = mainFighter.speed;   
+      int k = 0;
+      while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
+        k++;
+        Fight(i);
+      }
+      k = 0;
+      fighters[i].rate = abs(mainFighter.actualLife - fighters[i].actualLife); 
+      mainFighter.actualLife = mainFighter.life;   
+      mainFighter.actualSpeed = mainFighter.speed;   
     }
 }
 
