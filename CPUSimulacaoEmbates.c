@@ -131,6 +131,7 @@ void fight(int n) {
     int secondDamage;
     int k = 0;
 
+    #pragma acc kernels
     for(int i = 0; i < n; i ++)
     {   
         while(k < AMOUNTINTERACTION & mainFighter.actualLife > 0){
