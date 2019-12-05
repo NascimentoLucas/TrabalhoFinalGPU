@@ -300,8 +300,8 @@ int main() {
     Reproduce(champ, nBodies);
   }
 
-  printFighter(champ);
-  printFighter(mainFighter);
+  //printFighter(champ);
+  //printFighter(mainFighter);
   
   int k = 0;
   printf("\nMain.life: %d <> Champ.life: %d", mainFighter.actualLife, champ.actualLife);

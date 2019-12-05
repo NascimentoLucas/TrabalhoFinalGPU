@@ -337,8 +337,8 @@ int main() {
   champ.actualLife = champ.life;
   champ.actualSpeed = champ.speed;
 
-  printFighter(champ);
-  printFighter(mainFighter);
+  //printFighter(champ);
+  //printFighter(mainFighter);
 
 
   #if DEBUGVALUE || true
